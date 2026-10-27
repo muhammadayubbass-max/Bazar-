@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ku" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="referrer" content="strict-origin-when-cross-origin">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#100b24">
+  <meta name="description" content="M~A~MARAL — Music, videos, favorites and playlists.">
+  <title>M~A~MARAL | Music Universe</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+</head>
+
+<body>
+  <div class="background-effects" aria-hidden="true">
+    <div class="orb orb-one"></div>
+    <div class="orb orb-two"></div>
+    <div class="orb orb-three"></div>
+    <div id="starField"></div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#" data-section="home" aria-label="M~A~MARAL Home">
+      <span class="brand-icon">M</span>
+      <span class="brand-name">M~A~MARAL</span>
+    </a>
+
+    <form id="searchForm" class="search-box">
+      <input id="searchInput" type="search" placeholder="گەڕان بەدوای گۆرانی و ڤیدیۆ..." autocomplete="off">
+      <button type="submit" aria-label="گەڕان">⌕</button>
+    </form>
+
+    <div class="top-actions">
+      <button id="themeToggle" class="icon-button" title="گۆڕینی دۆخی ڕووناکی" aria-label="Theme">☀️</button>
+      <button id="accountButton" class="account-button">
+        <span>👤</span>
+        <span id="accountButtonText">چوونەژوورەوە</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-label">مێنیو</div>
+
+      <button class="nav-item active" data-section="home">
+        <span>⌂</span><span>سەرەتا</span>
+      </button>
+
+      <button class="nav-item" data-section="favorites">
+        <span>♥</span><span>دڵخوازەکان</span>
+      </button>
+
+      <button class="nav-item" data-section="history">
+        <span>◷</span><span>مێژووی بینین</span>
+      </button>
+
+      <button class="nav-item" data-section="playlists">
+        <span>♫</span><span>Playlist ـەکان</span>
+      </button>
+
+      <button class="nav-item" data-section="about">
+        <span>✦</span><span>دەربارە</span>
+      </button>
+
+      <div class="sidebar-card">
+        <div class="sidebar-card-icon">🎧</div>
+        <h3>Music Universe</h3>
+        <p>جیهانێک بۆ گۆرانی و ڤیدیۆی دڵخوازت.</p>
+      </div>
+
+      <div class="sidebar-footer">
+        <span class="status-dot"></span>
+        <span id="connectionStatus">ئامادەیە</span>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <section id="homeSection" class="page-section">
+        <div class="hero">
+          <div class="hero-content">
+            <span class="eyebrow"><span class="eyebrow-dot"></span> بەخێربێیت بۆ جیهانی مۆسیقا</span>
+            <h1>مۆسیقای خۆت،<br><span>جیهانی خۆت.</span></h1>
+            <p>گۆرانی و ڤیدیۆ بدۆزەرەوە، دڵخوازەکانت هەڵبگرە و لیستی تایبەتی خۆت دروست بکە.</p>
+            <button class="primary-button" id="exploreButton">دەستپێبکە <span>←</span></button>
+          </div>
+          <div class="hero-art" aria-hidden="true">
+            <div class="hero-disc">
+              <div class="disc-ring"></div>
+              <div class="disc-center">M</div>
+            </div>
+            <span class="floating-note note-one">♫</span>
+            <span class="floating-note note-two">♪</span>
+            <span class="floating-star">✦</span>
+          </div>
+        </div>
+
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">DISCOVER</span>
+            <h2>ڤیدیۆی پێشنیارکراو</h2>
+          </div>
+          <span class="section-badge">YouTube</span>
+        </div>
+
+        <div id="homeVideoGrid" class="video-grid"></div>
+        <button id="loadMoreButton" class="secondary-button load-more">ڤیدیۆی زیاتر ببینە ↓</button>
+      </section>
+
+      <section id="searchSection" class="page-section hidden">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">SEARCH RESULTS</span>
+            <h2 id="searchTitle">ئەنجامی گەڕان</h2>
+          </div>
+        </div>
+        <div id="searchResultsGrid" class="video-grid"></div>
+        <button id="searchMoreButton" class="secondary-button load-more hidden">زیاتر پیشان بدە ↓</button>
+      </section>
+
+      <section id="favoritesSection" class="page-section hidden">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">YOUR COLLECTION</span>
+            <h2>❤️ دڵخوازەکانت</h2>
+            <p class="section-description">ئەو ڤیدیۆیانەی هەڵت بژاردوون.</p>
+          </div>
+        </div>
+        <div id="favoritesGrid" class="video-grid"></div>
+      </section>
+
+      <section id="historySection" class="page-section hidden">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">RECENTLY WATCHED</span>
+            <h2>🕘 مێژووی بینین</h2>
+          </div>
+          <button id="clearHistoryButton" class="text-button">پاککردنەوە</button>
+        </div>
+        <div id="historyGrid" class="video-grid"></div>
+      </section>
+
+      <section id="playlistsSection" class="page-section hidden">
+        <div class="section-heading">
+          <div>
+            <span class="section-kicker">YOUR MUSIC</span>
+            <h2>♫ Playlist ـەکانت</h2>
+            <p class="section-description">لیستی تایبەتی گۆرانی و ڤیدیۆ دروست بکە.</p>
+          </div>
+          <button id="createPlaylistButton" class="primary-button">＋ لیستی نوێ</button>
+        </div>
+        <div id="playlistsContainer" class="playlists-container"></div>
+        <div id="playlistVideosArea" class="playlist-videos-area hidden">
+          <div class="section-heading compact-heading">
+            <h2 id="activePlaylistTitle">لیست</h2>
+            <button id="backToPlaylistsButton" class="text-button">← گەڕانەوە</button>
+          </div>
+          <div id="playlistVideosGrid" class="video-grid"></div>
+        </div>
+      </section>
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="social-links">
+        <a href="https://www.instagram.com/kak_adolf_surchi/" target="_blank" rel="noopener" aria-label="instagram"><span></span>📸</a>
+        <a href="https://www.snapchat.com/add/kaka-adolf" target="_blank" rel="noopener" aria-label="snapchat"><span></span>👻</a>
+        <a href="https://www.tiktok.com/@kaka_adolf" target="_blank" rel="noopener" aria-label="tiktok"><span></span>🎵</a>
+
+
+
+
+
+
+
+
+
+
+
+
+      <section id="aboutSection" class="page-section hidden">
+        <div class="about-card">
+          <div class="about-logo">M~A~MARAL</div>
+          <span class="section-kicker">ABOUT OUR UNIVERSE</span>
+          <h1>مۆسیقا، هەست، یادەوەری.</h1>
+          <p>
+            M~A~MARAL شوێنێکە بۆ دۆزینەوەی ڤیدیۆ و گۆرانییە دڵخوازەکانت،
+            ڕێکخستنی دڵخوازەکان و دروستکردنی Playlist ـی تایبەتی خۆت.
+          </p>
+          <div class="about-features">
+            <div><span>🎵</span><strong>مۆسیقا</strong><small>گەڕان و بینین</small></div>
+            <div><span>☁️</span><strong>هاوکاتکردن</strong><small>داتای هەژمارەکەت</small></div>
+            <div><span>💜</span><strong>تایبەت بە تۆ</strong><small>دڵخوازەکانت</small></div>
+          </div>
+          <p class="about-note">پەخشکردنی ڤیدیۆ بە یارمەتی YouTube ئەنجام دەدرێت. M~A~MARAL خاوەنی ناوەڕۆکی YouTube نییە. </p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- Video player modal -->
+  <div id="videoModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="پەخشکردنی ڤیدیۆ">
+    <div class="modal-backdrop" data-close-modal="videoModal"></div>
+    <div class="modal-panel video-modal-panel">
+      <button class="modal-close" data-close-modal="videoModal" aria-label="داخستن">×</button>
+      <div class="player-frame">
+        <iframe id="videoFrame"
+          src="about:blank"
+          title="YouTube video player"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          referrerpolicy="strict-origin-when-cross-origin"
+          allowfullscreen></iframe>
+      </div>
+      <h2 id="modalVideoTitle">ناوی ڤیدیۆ</h2>
+      <div class="player-actions">
+        <button id="modalFavoriteButton" class="secondary-button">♡ زیادکردن بۆ دڵخوازەکان</button>
+        <button id="modalPlaylistButton" class="secondary-button">＋ زیادکردن بۆ Playlist</button>
+      </div>
+      <p id="playerAccountHint" class="muted-note"></p>
+    </div>
+  </div>
+
+  <!-- Authentication modal -->
+  <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="هەژمار">
+    <div class="modal-backdrop" data-close-modal="authModal"></div>
+    <div class="modal-panel auth-panel">
+      <button class="modal-close" data-close-modal="authModal" aria-label="داخستن">×</button>
+      <div class="auth-brand">M~A~MARAL</div>
+      <span class="section-kicker">YOUR PERSONAL SPACE</span>
+      <h2 id="authTitle">بەخێربێیتەوە</h2>
+      <p class="auth-subtitle" id="authSubtitle">بچۆ ژوورەوە بۆ هاوکاتکردنی داتاکانت.</p>
+
+      <form id="authForm">
+        <label for="authEmail">ئیمەیڵ</label>
+        <input id="authEmail" type="email" placeholder="you@example.com" required autocomplete="email">
+
+        <label for="authPassword">وشەی نهێنی</label>
+        <input id="authPassword" type="password" placeholder="لانیکەم ٦ پیت" minlength="6" required autocomplete="current-password">
+
+        <div id="confirmPasswordWrap" class="hidden">
+          <label for="authConfirmPassword">دووبارەکردنەوەی وشەی نهێنی</label>
+          <input id="authConfirmPassword" type="password" minlength="6" autocomplete="new-password">
+        </div>
+
+        <button id="authSubmitButton" type="submit" class="primary-button auth-submit">چوونەژوورەوە</button>
+      </form>
+
+      <p id="authError" class="form-message" role="status"></p>
+      <button id="switchAuthMode" class="text-button auth-switch">هەژمارت نییە؟ هەژمار دروست بکە</button>
+      <button id="forgotPasswordButton" class="text-button forgot-password">وشەی نهێنیت لەبیرکردووە؟</button>
+    </div>
+  </div>
+
+  <!-- Playlist create / add modal -->
+  <div id="playlistModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Playlist">
+    <div class="modal-backdrop" data-close-modal="playlistModal"></div>
+    <div class="modal-panel small-modal-panel">
+      <button class="modal-close" data-close-modal="playlistModal" aria-label="داخستن">×</button>
+      <span class="section-kicker">YOUR COLLECTION</span>
+      <h2 id="playlistModalTitle">Playlist دروست بکە</h2>
+      <form id="playlistForm">
+        <label for="playlistNameInput">ناوی Playlist</label>
+        <input id="playlistNameInput" type="text" maxlength="60" placeholder="بۆ نموونە: گۆرانی دڵخوازەکانم" required>
+        <button type="submit" class="primary-button auth-submit">هەڵگرتن</button>
+      </form>
+      <div id="playlistChoices" class="playlist-choices hidden"></div>
+      <p id="playlistMessage" class="form-message" role="status"></p>
+    </div>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <footer class="site-footer">
+    <span>© <span id="currentYear"></span> M~A~MARAL</span>
+    <span>Made for your music universe ✦</span>
+  </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>
